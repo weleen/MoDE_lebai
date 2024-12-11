@@ -25,6 +25,41 @@ from mode.rollout.rollout_video import RolloutVideo
 
 logger = logging.getLogger(__name__)
 
+def get_env(dataset_path, obs_space=None, show_gui=True, **kwargs):
+    from pathlib import Path
+    import calvin_env
+
+    from omegaconf import OmegaConf
+
+    render_conf = OmegaConf.load(Path(dataset_path) / ".hydra" / "merged_config.yaml")
+
+    if obs_space is not None:
+        exclude_keys = set(render_conf.cameras.keys()) - {
+            re.split("_", key)[1] for key in obs_space["rgb_obs"] + obs_space["depth_obs"]
+        }
+        for k in exclude_keys:
+            del render_conf.cameras[k]
+    if "scene" in kwargs:
+        scene_cfg = OmegaConf.load(
+            Path(calvin_env.__file__).parents[1] / "conf/scene" / f"{kwargs['scene']}.yaml"
+        )
+        OmegaConf.update(render_conf, "scene", scene_cfg)
+    if not hydra.core.global_hydra.GlobalHydra.instance().is_initialized():
+        hydra.initialize(".")
+    env = hydra.utils.instantiate(
+        render_conf.env, show_gui=show_gui, use_vr=False, use_scene_info=True
+    )
+    return env
+
+def make_env(dataset_path, show_gui=True, split="validation", scene=None):
+    val_folder = Path(dataset_path) / f"{split}"
+    if scene is not None:
+        env = get_env(val_folder, show_gui=show_gui, scene=scene)
+    else:
+        env = get_env(val_folder, show_gui=show_gui)
+
+    return env
+
 
 def get_video_tag(i):
     if dist.is_available() and dist.is_initialized():
@@ -190,7 +225,8 @@ def rollout(env, model, task_oracle, cfg, subtask, lang_embeddings, val_annotati
     # get lang annotation for subtask
     lang_annotation = val_annotations[subtask][0]
     # get language goal embedding
-    goal = lang_embeddings.get_lang_goal(lang_annotation)
+    # goal = lang_embeddings.get_lang_goal(lang_annotation)
+    goal = {}
     goal['lang_text'] = val_annotations[subtask][0]
     model.reset()
     start_info = env.get_info()
@@ -220,59 +256,51 @@ def rollout(env, model, task_oracle, cfg, subtask, lang_embeddings, val_annotati
     return False
 
 
-@hydra.main(config_path="../../conf", config_name="mdt_evaluate")
+@hydra.main(config_path="../../conf", config_name="mode_evaluate")
 def main(cfg):
     log_wandb = cfg.log_wandb
-    torch.cuda.set_device(cfg.device)
+    # torch.cuda.set_device(cfg.device)
     seed_everything(0, workers=True)  # type:ignore
     # evaluate a custom model
-    checkpoints = [get_last_checkpoint(Path(cfg.train_folder))]
+    # checkpoints = [get_last_checkpoint(Path(cfg.train_folder))]
     lang_embeddings = None
     env = None
     results = {}
     plans = {}
 
-    for checkpoint in checkpoints:
-        print(cfg.device)
-        model, env, _, lang_embeddings = get_default_beso_and_env(
-            cfg.train_folder,
-            cfg.dataset_path,
-            checkpoint,
-            env=env,
-            lang_embeddings=lang_embeddings,
-            eval_cfg_overwrite=cfg.eval_cfg_overwrite,
-            device_id=cfg.device,
+    print(cfg.device)
+    env = make_env(cfg.dataset_path, show_gui=False)
+    # model, env, _, lang_embeddings = get_default_beso_and_env(
+    #     cfg.train_folder,
+    #     cfg.dataset_path,
+    #     checkpoint,
+    #     env=env,
+    #     lang_embeddings=lang_embeddings,
+    #     eval_cfg_overwrite=cfg.eval_cfg_overwrite,
+    #     device_id=cfg.device,
+    # )
+
+    model = hydra.utils.instantiate(cfg.model)
+
+    model = model.to(cfg.device)
+    model.eval()
+
+    log_dir = get_log_dir(cfg.log_dir)
+    if log_wandb:
+        os.makedirs(log_dir / "wandb", exist_ok=False)
+        run = wandb.init(
+            project='calvin_eval',
+            entity=cfg.wandb.entity,
+            group=cfg.model_name + cfg.sampler_type + '_' + str(cfg.num_sampling_steps) + '_steps_' + str(cfg.cond_lambda) + '_c_' + str(cfg.num_sequences) + '_rollouts_',
+            config=dict(cfg),
+            dir=log_dir / "wandb",
         )
 
-        print(cfg.num_sampling_steps, cfg.sampler_type, cfg.multistep, cfg.sigma_min, cfg.sigma_max, cfg.noise_scheduler)
-        model.num_sampling_steps = cfg.num_sampling_steps
-        model.sampler_type = cfg.sampler_type
-        model.multistep = cfg.multistep
-        if cfg.sigma_min is not None:
-            model.sigma_min = cfg.sigma_min
-        if cfg.sigma_max is not None:
-            model.sigma_max = cfg.sigma_max
-        if cfg.noise_scheduler is not None:
-            model.noise_scheduler = cfg.noise_scheduler
-
-        if cfg.cfg_value != 1:
-            raise NotImplementedError("cfg_value != 1 not implemented yet")
-
-        model.eval()
-        if log_wandb:
-            log_dir = get_log_dir(cfg.train_folder)
-            os.makedirs(log_dir / "wandb", exist_ok=False)
-            run = wandb.init(
-                project='calvin_eval',
-                entity=cfg.wandb.entity,
-                group=cfg.model_name + cfg.sampler_type + '_' + str(cfg.num_sampling_steps) + '_steps_' + str(cfg.cond_lambda) + '_c_' + str(cfg.num_sequences) + '_rollouts_',
-                config=dict(cfg),
-                dir=log_dir / "wandb",
-            )
-
-            results[checkpoint], plans[checkpoint] = evaluate_policy(model, env, lang_embeddings, cfg, num_videos=cfg.num_videos, save_dir=Path(log_dir))
-            print_and_save(results, plans, cfg, log_dir=log_dir)
-            run.finish()
+    results["checkpoint"], plans["checkpoint"] = evaluate_policy(model, env, lang_embeddings, cfg, num_videos=cfg.num_videos, save_dir=Path(log_dir))
+    print_and_save(results, plans, cfg, log_dir=log_dir)
+    
+    if log_wandb:
+        run.finish()
 
 
 if __name__ == "__main__":
