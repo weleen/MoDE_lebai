@@ -132,7 +132,7 @@ We used the following split for training:
 | DOBB-E | 0.245176 |
 | **Total** | 1.000000 |
 
-The model was pretrained for 300k steps with full pretraining details provided here; [MoDE Pretraining Report](https://wandb.ai/irl-masterthesis/simulation_eval/reports/MoDE-Pretraining--VmlldzoxMDU1NjA0MQ).
+The model was pretrained for 300k steps with full pretraining details provided here; [MoDE Pretraining Report](https://api.wandb.ai/links/irl-masterthesis/ql9m7m5i).
 
 Important params:
 * `--in_root`: `/YOUR/PATH/TO/CALVIN/`, e.g `/data3/geyuan/datasets/CALVIN/`
