@@ -1,11 +1,20 @@
 # MoDE_Diffusion_Policy
 
-Add paper link and more here
+[Paper](h), [Project Page](), 
+
+
+[Moritz Reuss](https://mbreuss.github.io/moritzreuss/)<sup>1</sup>,
+[Jyothish Pari](https://jyopari.github.io/aboutMe.html)<sup>1</sup>,
+[Pulkit Agrawal](https://people.csail.mit.edu/pulkitag/)<sup>2</sup>,
+[Rudolf Lioutikov](http://rudolf.intuitive-robots.net/)<sup>1</sup>
+
+<sup>1</sup>Intuitive Robots Lab, KIT
+<sup>2</sup>MIT CSAIL
 
 ## Installation
 To begin, clone this repository locally
 ```bash
-git clone --recurse-submodules git@github.com:mbreuss/MoDE_Diffusion_Policy.git
+git clone --recurse-submodules git@github.com:intuitive-robots/MoDE_Diffusion_Policy.git
 export mode_ROOT=$(pwd)/MoDE_Diffusion_Policy
 
 ```
@@ -57,10 +66,11 @@ To train the mode model with the maximum amount of available GPUS, run:
 python mode/training.py
 ```
 
-For replication of the orginial training results I recommend to use 4 GPUs with a batch_size of 128 and train them for 25 (35) epochs for ABC (ABCD).
+For replication of the orginial training results I recommend to use 4 GPUs with a batch_size of 128 and train them for 20 epochs for ABC (ABCD).
+See configs for details.
 
-#### (Optional) Preprocessing with CALVIN
-Since MDT uses action chunking, it needs to load multiple (~10) `episode_{}.npz` files for each inference. In combination with batching, this results in a large disk bandwidth needed for each iteration (usually ~2000MB/iteration).
+#### Preprocessing with CALVIN
+Since MoDE uses action chunking, it needs to load multiple (~10) `episode_{}.npz` files for each inference. In combination with batching, this results in a large disk bandwidth needed for each iteration (usually ~2000MB/iteration).
 This has the potential of significantly reducing your GPU utilization rate during training depending on your hardware.
 Therefore, you can use the script `extract_by_key.py` to extract the data into a single file, avoiding opening too many episode files when using the CALVIN dataset.
 
@@ -83,7 +93,46 @@ python preprocess/extract_by_key.py -h
 
 ## Evaluation
 
-Download the pretrained models from this link: [https://drive.google.com/drive/folders/17kuCgMi_GcYz1WVzumtIsKuvPYGvidxT?usp=sharing](https://drive.google.com/drive/folders/17kuCgMi_GcYz1WVzumtIsKuvPYGvidxT?usp=sharing).
+Download the pretrained models from Hugging Face: 
+- [MoDE_CALVIN_ABC](https://huggingface.co/mbreuss/MoDE_CALVIN_ABC)
+- [MoDE_CALVIN_ABCD](https://huggingface.co/mbreuss/MoDE_CALVIN_ABCD)
+- [MoDE_CALVIN_D](https://huggingface.co/mbreuss/MoDE_CALVIN_D)
+
+
+## Performance Comparison on CALVIN Challenges (1000 chains)
+| Train→Test | Method | Active Params (M) | PrT | 1 | 2 | 3 | 4 | 5 | **Avg. Len.** |
+|------------|---------|------------------|-----|---|---|---|---|---|---------------|
+| ABCD→D | Diff-P-CNN | 321 | × | 86.3% | 72.7% | 60.1% | 51.2% | 41.7% | 3.16±0.06 |
+| | Diff-P-T | 194 | × | 78.3% | 53.9% | 33.8% | 20.4% | 11.3% | 1.98±0.09 |
+| | RoboFlamingo | 1000 | ✓ | 96.4% | 89.6% | 82.4% | 74.0% | 66.0% | 4.09±0.00 |
+| | GR-1 | 130 | ✓ | 94.9% | 89.6% | 84.4% | 78.9% | 73.1% | 4.21±0.00 |
+| | **MoDE (ours)** | 277 | × | 96.6% | 90.6% | 86.6% | 80.9% | 75.5% | 4.30±0.02 |
+| | **MoDE (ours)** | 436 | ✓ | **97.1%** | **92.5%** | **87.9%** | **83.5%** | **77.9%** | **4.39±0.04** |
+| ABC→D | Diff-P-CNN | 321 | × | 63.5% | 35.3% | 19.4% | 10.7% | 6.4% | 1.35±0.05 |
+| | Diff-P-T | 194 | × | 62.2% | 30.9% | 13.2% | 5.0% | 1.6% | 1.13±0.02 |
+| | RoboFlamingo | 1000 | ✓ | 82.4% | 61.9% | 46.6% | 33.1% | 23.5% | 2.47±0.00 |
+| | SuSIE | 860+ | ✓ | 87.0% | 69.0% | 49.0% | 38.0% | 26.0% | 2.69±0.00 |
+| | GR-1 | 130 | ✓ | 85.4% | 71.2% | 59.6% | 49.7% | 40.1% | 3.06±0.00 |
+| | **MoDE (ours)** | 307 | × | 91.5% | 79.2% | 67.3% | 55.8% | 45.3% | 3.39±0.03 |
+| | **MoDE (ours)** | 436 | ✓ | **96.7%** | **88.6%** | **80.2%** | **70.7%** | **60.9%** | **3.98±0.04** |
+
+We also provide the pretrained checkpoint after pretraining MoDE for 300k steps on a small OXE subset:
+
+- [MoDE_pret] TODO 
+
+We used the following split for training:
+
+| **Dataset** | **Weight** |
+|-------------|------------|
+| BC-Z | 0.258768 |
+| LIBERO-10 | 0.043649 |
+| BRIDGE | 0.188043 |
+| CMU Play-Fusion | 0.101486 |
+| Google Fractal | 0.162878 |
+| DOBB-E | 0.245176 |
+| **Total** | 1.000000 |
+
+The model was pretrained for 300k steps with full pretraining details provided here; [MoDE Pretraining Report](https://wandb.ai/irl-masterthesis/simulation_eval/reports/MoDE-Pretraining--VmlldzoxMDU1NjA0MQ).
 
 Important params:
 * `--in_root`: `/YOUR/PATH/TO/CALVIN/`, e.g `/data3/geyuan/datasets/CALVIN/`
