@@ -1,41 +1,25 @@
 defaults:
   - model: mode_agent
+  - annotations: new_playtable_validation
+  - callbacks/rollout_lh/tasks@tasks: new_playtable_tasks
+  - datamodule/transforms@transforms: calvin_transforms
 
-act_seq_len: 10
-multistep: 10 #${act_seq_len}
-seed: 242
-obs_dim: 512
-act_dim: 7
-datamodule:
-  action_space: ${act_dim}
-proprio_dims: 7
-obs_seq_len: 1
-device: 'cuda'
-clip_lang_model_name: ViT-B/32
+eval_cfg_overwrite:
+  datamodule:
+    datasets:
+      lang_dataset:
+        lang_folder: lang_annotations
 
-# root_data_dir: /hkfs/work/workspace/scratch/ft4740-play3/data/task_ABC_D
-# lang_folder: lang_clip_resnet50
-# vis_clip_model_name: ViT-B/16
+train_folder: /home/i53/student/yagmurlu/code/MoDE_Diffusion_Policy/pretrained/
+checkpoint: unknown=0
+device: 0
 
-# log_dir: ./logs
-# slurm: false
-# batch_size: 2 # 38 # 128
-# devices: 4
-# goal_dim: 512
-# p_last_state: 0
-# gen_img_res: 112
-# max_epochs: 35
-# rollout_lh_skip_epochs: 9
-# num_workers: 12
-# benchmark_name: calvin_abc # calvin_abcd
-# use_extracted_rel_actions: true
 
-log_dir: ./output
+log_dir: /home/i53/student/yagmurlu/code/MoDE_Diffusion_Policy/outputs
 log_wandb: False
 dataset_path: /home/i53/student/yagmurlu/code/manten/calvin/dataset/calvin_debug_dataset
-num_videos: 0
-model:
-  ckpt_path: /home/i53/student/yagmurlu/code/MoDE_Diffusion_Policy/pretrained
+num_videos: 30
+debug: False
 
-host: "localhost"
-port: 12567
+num_sequences: 100
+ep_len: 360

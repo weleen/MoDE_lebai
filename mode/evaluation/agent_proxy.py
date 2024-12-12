@@ -7,18 +7,23 @@ import numpy as np
 import torch
 from optree import tree_map
 
+from mode.evaluation.utils import get_default_mode_and_env
+
 logger = getLogger(__name__)
 
 agent = None
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def to_device(x):
-    if isinstance(x, np.ndarray):
-        return torch.from_numpy(x).to(device)
-    if isinstance(x, torch.Tensor):
-        return x.to(device)
-    return x
+def to_device(agent):
+    def fn(x):
+        if isinstance(x, np.ndarray):
+            x = torch.from_numpy(x)
+        
+        if isinstance(x, torch.Tensor):
+            return x.to(agent.device).to(agent.dtype)
+        return x
+    return fn
 
 
 class AgentHandler(BaseHTTPRequestHandler):
@@ -27,11 +32,11 @@ class AgentHandler(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         request = pickle.loads(post_data)  # noqa: S301
 
+        mapper = to_device(agent)
+
         method = request.get("method")
-        args = request.get("args", [])
-        args = tree_map(to_device, args)
-        kwargs = request.get("kwargs", {})
-        kwargs = tree_map(to_device, kwargs)
+        args = tree_map(mapper, request.get("args", []))
+        kwargs = tree_map(mapper, request.get("kwargs", {}))
 
         try:
             if method == "__shutdown__":
@@ -75,6 +80,19 @@ def main(cfg):
     
     agent = agent.to(cfg.device)
     agent.eval()
+
+    # model, env, _, lang_embeddings = get_default_mode_and_env(
+    #     cfg.train_folder,
+    #     cfg.dataset_path,
+    #     cfg.checkpoint,
+    #     env=42,
+    #     lang_embeddings=None,
+    #     eval_cfg_overwrite=cfg.eval_cfg_overwrite,
+    #     device_id=cfg.device,
+    # )
+    # model = model.to(cfg.device)
+    # model.eval()
+    # agent=model
 
     start_server(agent, cfg.host, cfg.port)
 

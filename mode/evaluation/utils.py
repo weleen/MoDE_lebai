@@ -155,8 +155,8 @@ def get_default_model_and_env(train_folder, dataset_path, checkpoint, env=None, 
     return model, env, data_module, lang_embeddings
 
 
-def get_default_beso_and_env(train_folder, dataset_path, checkpoint, env=None, lang_embeddings=None, device_id=0, eval_cfg_overwrite={}):
-    train_cfg_path = Path(train_folder) / ".hydra/config.yaml"
+def get_default_mode_and_env(train_folder, dataset_path, checkpoint, env=None, lang_embeddings=None, device_id=0, eval_cfg_overwrite={}):
+    train_cfg_path = Path(train_folder) / checkpoint / ".hydra/config.yaml"
     train_cfg_path = format_sftp_path(train_cfg_path)
     def_cfg = OmegaConf.load(train_cfg_path)
     eval_override_cfg = OmegaConf.create(eval_cfg_overwrite)
@@ -174,7 +174,7 @@ def get_default_beso_and_env(train_folder, dataset_path, checkpoint, env=None, l
     data_module.prepare_data()
     data_module.setup()
     dataloader = data_module.val_dataloader()
-    dataset = dataloader.dataset.datasets["lang"]
+    dataset = dataloader["lang"].dataset
     if device_id != 'cpu':
         device = torch.device(f"cuda:{device_id}")
     else:
@@ -184,27 +184,55 @@ def get_default_beso_and_env(train_folder, dataset_path, checkpoint, env=None, l
         lang_embeddings = LangEmbeddings(dataset.abs_datasets_dir, lang_folder, device=device)
 
     if env is None:
-        rollout_cfg = OmegaConf.load(Path(__file__).parents[2] / "conf/callbacks/rollout/default.yaml")
+        rollout_cfg = OmegaConf.load(Path(__file__).parents[2] / "conf/callbacks/rollout_lh/calvin.yaml")
         env = hydra.utils.instantiate(rollout_cfg.env_cfg, dataset, device, show_gui=False)
 
-    checkpoint = format_sftp_path(checkpoint)
-    print(f"Loading model from {checkpoint}")
 
     # new stuff
-    epoch = cfg.epoch_to_load if "epoch_to_load" in cfg else -1
     overwrite_cfg = cfg.overwrite_module_cfg if "overwrite_module_cfg" in cfg else {}
-    module_path = str(Path(train_folder).expanduser())
-    model = load_pl_module_from_checkpoint(
-        module_path,
-        epoch=epoch,
+    module_path = (Path(train_folder).expanduser())
+
+    print(f"Loading model from {module_path / checkpoint}")
+    model = load_mode_from_safetensor(
+        module_path / checkpoint,
         overwrite_cfg=overwrite_cfg,
-        use_ema_weights=True
     )
     model.freeze()
     model = model.cuda(device)
     print("Successfully loaded model.")
 
     return model, env, data_module, lang_embeddings
+
+def load_mode_from_safetensor(
+    filedir: Path,
+    overwrite_cfg: dict = {},
+):
+    if not filedir.is_dir():
+        raise ValueError(f"not valid file path: {str(filedir)}")
+    
+    config = get_config_from_dir(filedir)
+    ckpt_path = filedir
+
+    print(f"Loading model from {ckpt_path}")
+    load_cfg = OmegaConf.create({**OmegaConf.to_object(config.model), **{"optimizer": None}, **overwrite_cfg})
+    load_cfg["ckpt_path"] = str(ckpt_path)
+    model = hydra.utils.instantiate(load_cfg)
+     # Load EMA weights if they exist and the flag is set
+    # if use_ema_weights:
+    #     checkpoint_data = torch.load(ckpt_path)
+    #     if "ema_weights" in checkpoint_data['callbacks']['EMA']:
+    #         ema_weights_list = checkpoint_data['callbacks']['EMA']['ema_weights']
+
+    #         # Convert list of tensors to a state_dict format
+    #         ema_weights_dict = {name: ema_weights_list[i] for i, (name, _) in enumerate(model.named_parameters())}
+
+    #         model.load_state_dict(ema_weights_dict)
+    #         print("Successfully loaded EMA weights from checkpoint!")
+    #     else:
+    #         print("Warning: No EMA weights found in checkpoint!")
+
+    print(f"Finished loading model {ckpt_path}")
+    return model
 
 
 def join_vis_lang(img, lang_text):

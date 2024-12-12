@@ -31,7 +31,7 @@ clip_lang_model_name: ViT-B/32
 # use_extracted_rel_actions: true
 
 model:
-  ckpt_path: /home/i53/student/yagmurlu/code/MoDE_Diffusion_Policy/pretrained
+  ckpt_path: /home/i53/student/yagmurlu/code/MoDE_Diffusion_Policy/pretrained/unknown=0
 
 host: "localhost"
 port: 12567

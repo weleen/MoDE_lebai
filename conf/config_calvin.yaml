@@ -1,7 +1,7 @@
 defaults:
   - callbacks: calvin
   - datamodule: calvin
-  - model: smolflow_agent # paliflow_agent # smolflow_agent # vlm_berg_agent
+  - model: mode_agent # paliflow_agent # smolflow_agent # vlm_berg_agent
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 

@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import sys
 import time
-import calvin_env
 
 # This is for using the locally installed repo clone when using slurm
 sys.path.insert(0, Path(__file__).absolute().parents[2].as_posix())
@@ -13,52 +12,15 @@ import hydra
 import numpy as np
 from pytorch_lightning import seed_everything
 from termcolor import colored
-import torch
 from tqdm.auto import tqdm
 import wandb
 import torch.distributed as dist
 
 from mode.evaluation.multistep_sequences import get_sequences
-from mode.evaluation.utils import get_default_beso_and_env, get_env_state_for_initial_condition, join_vis_lang
-from mode.utils.utils import get_last_checkpoint
+from mode.evaluation.utils import get_default_mode_and_env, get_env_state_for_initial_condition, join_vis_lang
 from mode.rollout.rollout_video import RolloutVideo
 
 logger = logging.getLogger(__name__)
-
-def get_env(dataset_path, obs_space=None, show_gui=True, **kwargs):
-    from pathlib import Path
-    import calvin_env
-
-    from omegaconf import OmegaConf
-
-    render_conf = OmegaConf.load(Path(dataset_path) / ".hydra" / "merged_config.yaml")
-
-    if obs_space is not None:
-        exclude_keys = set(render_conf.cameras.keys()) - {
-            re.split("_", key)[1] for key in obs_space["rgb_obs"] + obs_space["depth_obs"]
-        }
-        for k in exclude_keys:
-            del render_conf.cameras[k]
-    if "scene" in kwargs:
-        scene_cfg = OmegaConf.load(
-            Path(calvin_env.__file__).parents[1] / "conf/scene" / f"{kwargs['scene']}.yaml"
-        )
-        OmegaConf.update(render_conf, "scene", scene_cfg)
-    if not hydra.core.global_hydra.GlobalHydra.instance().is_initialized():
-        hydra.initialize(".")
-    env = hydra.utils.instantiate(
-        render_conf.env, show_gui=show_gui, use_vr=False, use_scene_info=True
-    )
-    return env
-
-def make_env(dataset_path, show_gui=True, split="validation", scene=None):
-    val_folder = Path(dataset_path) / f"{split}"
-    if scene is not None:
-        env = get_env(val_folder, show_gui=show_gui, scene=scene)
-    else:
-        env = get_env(val_folder, show_gui=show_gui)
-
-    return env
 
 
 def get_video_tag(i):
@@ -128,7 +90,7 @@ def print_and_save(total_results, plan_dicts, cfg, log_dir=None):
             print(f"{task}: {cnt_success[task]} / {total[task]} |  SR: {cnt_success[task] / total[task] * 100:.1f}%")
 
         data = {"avg_seq_len": avg_seq_len, "chain_sr": chain_sr, "task_info": task_info}
-        wandb.log({"avrg_performance/avg_seq_len": avg_seq_len, "avrg_performance/chain_sr": chain_sr, "detailed_metrics/task_info": task_info})
+        # wandb.log({"avrg_performance/avg_seq_len": avg_seq_len, "avrg_performance/chain_sr": chain_sr, "detailed_metrics/task_info": task_info})
         current_data[epoch] = data
 
         print()
@@ -269,18 +231,15 @@ def main(cfg):
     plans = {}
 
     print(cfg.device)
-    env = make_env(cfg.dataset_path, show_gui=False)
-    # model, env, _, lang_embeddings = get_default_beso_and_env(
-    #     cfg.train_folder,
-    #     cfg.dataset_path,
-    #     checkpoint,
-    #     env=env,
-    #     lang_embeddings=lang_embeddings,
-    #     eval_cfg_overwrite=cfg.eval_cfg_overwrite,
-    #     device_id=cfg.device,
-    # )
-
-    model = hydra.utils.instantiate(cfg.model)
+    model, env, _, lang_embeddings = get_default_mode_and_env(
+        cfg.train_folder,
+        cfg.dataset_path,
+        cfg.checkpoint,
+        env=env,
+        lang_embeddings=lang_embeddings,
+        eval_cfg_overwrite=cfg.eval_cfg_overwrite,
+        device_id=cfg.device,
+    )
 
     model = model.to(cfg.device)
     model.eval()
@@ -296,7 +255,8 @@ def main(cfg):
             dir=log_dir / "wandb",
         )
 
-    results["checkpoint"], plans["checkpoint"] = evaluate_policy(model, env, lang_embeddings, cfg, num_videos=cfg.num_videos, save_dir=Path(log_dir))
+    ckpt_path = Path(cfg.model.ckpt_path)
+    results[ckpt_path], plans[ckpt_path] = evaluate_policy(model, env, lang_embeddings, cfg, num_videos=cfg.num_videos, save_dir=Path(log_dir))
     print_and_save(results, plans, cfg, log_dir=log_dir)
     
     if log_wandb:
