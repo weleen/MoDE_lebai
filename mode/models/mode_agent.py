@@ -131,7 +131,7 @@ class MoDEAgent(pl.LightningModule):
             # self.analyze_state_dict_keys(ckpt_path)
             self.load_pretrained_parameters(ckpt_path)
 
-        self.need_precompute_experts_for_inference = False
+        self.need_precompute_experts_for_inference = True
 
         self.lang_buffer = AdvancedLangEmbeddingBuffer(self.language_goal, 10000)
 
@@ -854,6 +854,7 @@ class MoDEAgent(pl.LightningModule):
         return current_action
     
     def precompute_expert_for_inference(self, goal=None):
+        logger.info("Precomputing experts with sampling steps %d", self.num_sampling_steps)
         sigmas = self.get_noise_schedule(self.num_sampling_steps, self.noise_scheduler)[:-1]
         # iterate over the sigmas and precompute the experts
         for sigma in sigmas:

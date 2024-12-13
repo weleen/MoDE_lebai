@@ -14,7 +14,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import Callback, LightningModule, Trainer
 from tqdm import tqdm
 
-from mode.datasets.shm_dataset import ShmDataset
+# from mode.datasets.shm_dataset import ShmDataset
 from mode.datasets.utils.episode_utils import lookup_naming_pattern
 
 log = logging.getLogger(__name__)
@@ -324,13 +324,13 @@ def delete_shm(shm_keys, signal, frame):
     exit()
 
 
-class SignalCallback(Callback):
-    """
-    Register a signal handler for closing and unlinking the shared memory that get's activated with a SIGTERM signal.
-    """
+# class SignalCallback(Callback):
+#     """
+#     Register a signal handler for closing and unlinking the shared memory that get's activated with a SIGTERM signal.
+#     """
 
-    def on_fit_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        if isinstance(trainer.datamodule.train_dataloader()["vis"].dataset, ShmDataset):  # type: ignore
-            shm_keys = trainer.datamodule.train_dataloader()["vis"].dataset.episode_lookup_dict.keys()  # type: ignore
-            signal.signal(signal.SIGTERM, partial(delete_shm, shm_keys))
-            print("Registered shared memory signal handler.")
+#     def on_fit_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
+#         if isinstance(trainer.datamodule.train_dataloader()["vis"].dataset, ShmDataset):  # type: ignore
+#             shm_keys = trainer.datamodule.train_dataloader()["vis"].dataset.episode_lookup_dict.keys()  # type: ignore
+#             signal.signal(signal.SIGTERM, partial(delete_shm, shm_keys))
+#             print("Registered shared memory signal handler.")

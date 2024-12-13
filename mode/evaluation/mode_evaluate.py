@@ -255,8 +255,7 @@ def main(cfg):
             dir=log_dir / "wandb",
         )
 
-    ckpt_path = Path(cfg.model.ckpt_path)
-    results[ckpt_path], plans[ckpt_path] = evaluate_policy(model, env, lang_embeddings, cfg, num_videos=cfg.num_videos, save_dir=Path(log_dir))
+    results[Path(cfg.checkpoint)], plans[Path(cfg.checkpoint)] = evaluate_policy(model, env, lang_embeddings, cfg, num_videos=cfg.num_videos, save_dir=Path(log_dir))
     print_and_save(results, plans, cfg, log_dir=log_dir)
     
     if log_wandb:

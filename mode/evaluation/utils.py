@@ -189,13 +189,13 @@ def get_default_mode_and_env(train_folder, dataset_path, checkpoint, env=None, l
 
 
     # new stuff
-    overwrite_cfg = cfg.overwrite_module_cfg if "overwrite_module_cfg" in cfg else {}
+    # overwrite_cfg = cfg.overwrite_module_cfg if "overwrite_module_cfg" in cfg else {}
     module_path = (Path(train_folder).expanduser())
 
     print(f"Loading model from {module_path / checkpoint}")
     model = load_mode_from_safetensor(
         module_path / checkpoint,
-        overwrite_cfg=overwrite_cfg,
+        overwrite_cfg=eval_cfg_overwrite.model if "model" in eval_cfg_overwrite else {},
     )
     model.freeze()
     model = model.cuda(device)
