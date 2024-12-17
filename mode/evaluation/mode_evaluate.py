@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 import time
 
+from omegaconf import OmegaConf
+
 # This is for using the locally installed repo clone when using slurm
 sys.path.insert(0, Path(__file__).absolute().parents[2].as_posix())
 import hydra
@@ -90,7 +92,7 @@ def print_and_save(total_results, plan_dicts, cfg, log_dir=None):
             print(f"{task}: {cnt_success[task]} / {total[task]} |  SR: {cnt_success[task] / total[task] * 100:.1f}%")
 
         data = {"avg_seq_len": avg_seq_len, "chain_sr": chain_sr, "task_info": task_info}
-        # wandb.log({"avrg_performance/avg_seq_len": avg_seq_len, "avrg_performance/chain_sr": chain_sr, "detailed_metrics/task_info": task_info})
+        wandb.log({"avrg_performance/avg_seq_len": avg_seq_len, "avrg_performance/chain_sr": chain_sr, "detailed_metrics/task_info": task_info})
         current_data[epoch] = data
 
         print()
@@ -242,17 +244,32 @@ def main(cfg):
     )
 
     model = model.to(cfg.device)
+
+    if cfg.num_sampling_steps is not None:
+        model.num_sampling_steps = cfg.num_sampling_steps
+    if cfg.sampler_type is not None:
+        model.sampler_type = cfg.sampler_type
+    if cfg.multistep is not None:
+        model.multistep = cfg.multistep
+    if cfg.sigma_min is not None:
+        model.sigma_min = cfg.sigma_min
+    if cfg.sigma_max is not None:
+        model.sigma_max = cfg.sigma_max
+    if cfg.noise_scheduler is not None:
+        model.noise_scheduler = cfg.noise_scheduler
+    print(model.num_sampling_steps, model.sampler_type, model.multistep, model.sigma_min, model.sigma_max, model.noise_scheduler)
+
     model.eval()
 
     log_dir = get_log_dir(cfg.log_dir)
     if log_wandb:
         os.makedirs(log_dir / "wandb", exist_ok=False)
         run = wandb.init(
-            project='calvin_eval',
-            entity=cfg.wandb.entity,
-            group=cfg.model_name + cfg.sampler_type + '_' + str(cfg.num_sampling_steps) + '_steps_' + str(cfg.cond_lambda) + '_c_' + str(cfg.num_sequences) + '_rollouts_',
-            config=dict(cfg),
-            dir=log_dir / "wandb",
+            project='mode_calvin_eval',
+            entity=cfg.wandb_entity,
+            # group=cfg.model_name + cfg.sampler_type + '_' + str(cfg.num_sampling_steps) + '_steps_' + str(cfg.num_sequences) + '_rollouts_',
+            config=OmegaConf.to_object(cfg),
+            # dir=log_dir / "wandb",
         )
 
     results[Path(cfg.checkpoint)], plans[Path(cfg.checkpoint)] = evaluate_policy(model, env, lang_embeddings, cfg, num_videos=cfg.num_videos, save_dir=Path(log_dir))
@@ -266,5 +283,5 @@ if __name__ == "__main__":
     os.environ["PL_TORCH_DISTRIBUTED_BACKEND"] = "gloo"
     # Set CUDA device IDs
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "4"
     main()
