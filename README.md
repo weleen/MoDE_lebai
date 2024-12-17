@@ -1,9 +1,9 @@
 # MoDE_Diffusion_Policy
 
-[Paper](h), [Project Page](), 
+[Paper](h), [Project Page](https://mbreuss.github.io/MoDE_Diffusion_Policy/), 
 
 
-[Moritz Reuss](https://mbreuss.github.io/moritzreuss/)<sup>1</sup>,
+[Moritz Reuss](https://mbreuss.github.io/)<sup>1</sup>,
 [Jyothish Pari](https://jyopari.github.io/aboutMe.html)<sup>1</sup>,
 [Pulkit Agrawal](https://people.csail.mit.edu/pulkitag/)<sup>2</sup>,
 [Rudolf Lioutikov](http://rudolf.intuitive-robots.net/)<sup>1</sup>
@@ -33,9 +33,6 @@ pip install setuptools==57.5.0
 cd pyhash-0.9.3
 python setup.py build
 python setup.py install
-cd ..
-cd transformer_blocks
-pip install -e .
 cd ..
 cd LIBERO
 pip install -r requirements.txt
@@ -99,26 +96,32 @@ Download the pretrained models from Hugging Face:
 - [MoDE_CALVIN_D](https://huggingface.co/mbreuss/MoDE_CALVIN_D)
 
 
-## Performance Comparison on CALVIN Challenges (1000 chains)
-| Train→Test | Method | Active Params (M) | PrT | 1 | 2 | 3 | 4 | 5 | **Avg. Len.** |
-|------------|---------|------------------|-----|---|---|---|---|---|---------------|
-| ABCD→D | Diff-P-CNN | 321 | × | 86.3% | 72.7% | 60.1% | 51.2% | 41.7% | 3.16±0.06 |
-| | Diff-P-T | 194 | × | 78.3% | 53.9% | 33.8% | 20.4% | 11.3% | 1.98±0.09 |
-| | RoboFlamingo | 1000 | ✓ | 96.4% | 89.6% | 82.4% | 74.0% | 66.0% | 4.09±0.00 |
-| | GR-1 | 130 | ✓ | 94.9% | 89.6% | 84.4% | 78.9% | 73.1% | 4.21±0.00 |
-| | **MoDE (ours)** | 277 | × | 96.6% | 90.6% | 86.6% | 80.9% | 75.5% | 4.30±0.02 |
-| | **MoDE (ours)** | 436 | ✓ | **97.1%** | **92.5%** | **87.9%** | **83.5%** | **77.9%** | **4.39±0.04** |
-| ABC→D | Diff-P-CNN | 321 | × | 63.5% | 35.3% | 19.4% | 10.7% | 6.4% | 1.35±0.05 |
-| | Diff-P-T | 194 | × | 62.2% | 30.9% | 13.2% | 5.0% | 1.6% | 1.13±0.02 |
-| | RoboFlamingo | 1000 | ✓ | 82.4% | 61.9% | 46.6% | 33.1% | 23.5% | 2.47±0.00 |
-| | SuSIE | 860+ | ✓ | 87.0% | 69.0% | 49.0% | 38.0% | 26.0% | 2.69±0.00 |
-| | GR-1 | 130 | ✓ | 85.4% | 71.2% | 59.6% | 49.7% | 40.1% | 3.06±0.00 |
-| | **MoDE (ours)** | 307 | × | 91.5% | 79.2% | 67.3% | 55.8% | 45.3% | 3.39±0.03 |
-| | **MoDE (ours)** | 436 | ✓ | **96.7%** | **88.6%** | **80.2%** | **70.7%** | **60.9%** | **3.98±0.04** |
+## Results on Calvin ABC→D
+
+| Method        | Active Params (Million) | PrT    | 1      | 2      | 3      | 4      | 5      | Avg. Len.        |
+|---------------|-------------------------|--------|--------|--------|--------|--------|--------|-----------------|
+| Diff-P-CNN    | 321                     | ×      | 63.5%  | 35.3%  | 19.4%  | 10.7%  | 6.4%   | 1.35±0.05        |
+| Diff-P-T      | 194                     | ×      | 62.2%  | 30.9%  | 13.2%  | 5.0%   | 1.6%   | 1.13±0.02        |
+| RoboFlamingo  | 1000                    | ✓      | 82.4%  | 61.9%  | 46.6%  | 33.1%  | 23.5%  | 2.47±0.00        |
+| SuSIE         | 860+                    | ✓      | 87.0%  | 69.0%  | 49.0%  | 38.0%  | 26.0%  | 2.69±0.00        |
+| GR-1          | 130                     | ✓      | 85.4%  | 71.2%  | 59.6%  | 49.7%  | 40.1%  | 3.06±0.00        |
+| **MoDE**      | 307                     | ×      | 91.5%  | 79.2%  | 67.3%  | 55.8%  | 45.3%  | 3.39±0.03        |
+| **MoDE**      | 436                     | ✓      | **96.2%** | **88.9%** | **81.1%** | **71.8%** | **63.5%** | **4.01±0.04** |
+
+## Results on Calvin ABCD→D
+
+| Method        | Active Params (Million) | PrT    | 1      | 2      | 3      | 4      | 5      | Avg. Len.        |
+|---------------|-------------------------|--------|--------|--------|--------|--------|--------|-----------------|
+| Diff-P-CNN    | 321                     | ×      | 86.3%  | 72.7%  | 60.1%  | 51.2%  | 41.7%  | 3.16±0.06        |
+| Diff-P-T      | 194                     | ×      | 78.3%  | 53.9%  | 33.8%  | 20.4%  | 11.3%  | 1.98±0.09        |
+| RoboFlamingo  | 1000                    | ✓      | 96.4%  | 89.6%  | 82.4%  | 74.0%  | 66.0%  | 4.09±0.00        |
+| GR-1          | 130                     | ✓      | 94.9%  | 89.6%  | 84.4%  | 78.9%  | 73.1%  | 4.21±0.00        |
+| **MoDE**      | 277                     | ×      | 96.6%  | 90.6%  | 86.6%  | 80.9%  | 75.5%  | 4.30±0.02        |
+| **MoDE**      | 436                     | ✓      | **97.1%** | **92.5%** | **87.9%** | **83.5%** | **77.9%** | **4.39±0.04** |
 
 We also provide the pretrained checkpoint after pretraining MoDE for 300k steps on a small OXE subset:
 
-- [MoDE_pret] TODO 
+- [MoDE_pret](https://huggingface.co/mbreuss/MoDE_Pretrained) 
 
 We used the following split for training:
 

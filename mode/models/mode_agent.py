@@ -20,7 +20,6 @@ from mode.utils.lr_schedulers.tri_stage_scheduler import TriStageLRScheduler
 from mode.callbacks.ema import EMA
 from mode.models.perceptual_encoders.resnets import ResNetEncoderWithFiLM
 from mode.models.perceptual_encoders.pretrained_resnets import FiLMResNet34Policy, FiLMResNet50Policy
-# from transformer_blocks.transformer_blocks.moe_layers import NoiseBlockMoE, CentralizedNoiseBlockMoE
 from mode.models.networks.modedit import NoiseBlockMoE 
 from mode.utils.lang_buffer import AdvancedLangEmbeddingBuffer
 
@@ -131,7 +130,7 @@ class MoDEAgent(pl.LightningModule):
             # self.analyze_state_dict_keys(ckpt_path)
             self.load_pretrained_parameters(ckpt_path)
 
-        self.need_precompute_experts_for_inference = True
+        self.need_precompute_experts_for_inference = False
 
         self.lang_buffer = AdvancedLangEmbeddingBuffer(self.language_goal, 10000)
 
