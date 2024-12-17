@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, ConcatDataset, RandomSampler, random_sp
 import pytorch_lightning as pl
 from omegaconf import DictConfig, OmegaConf
 import hydra
-from pytorch_lightning.trainer.supporters import CombinedLoader
+from pytorch_lightning.utilities import CombinedLoader
 import random
 import numpy as np
 

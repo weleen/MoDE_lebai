@@ -155,7 +155,7 @@ def get_default_model_and_env(train_folder, dataset_path, checkpoint, env=None, 
     return model, env, data_module, lang_embeddings
 
 
-def get_default_mode_and_env(train_folder, dataset_path, checkpoint, env=None, lang_embeddings=None, device_id=0, eval_cfg_overwrite={}):
+def get_default_mode_and_env(train_folder, dataset_path, checkpoint, env=None, lang_embeddings=None, prep_dm_and_deps=True, device_id=0, eval_cfg_overwrite={}):
     train_cfg_path = Path(train_folder) / checkpoint / ".hydra/config.yaml"
     train_cfg_path = format_sftp_path(train_cfg_path)
     def_cfg = OmegaConf.load(train_cfg_path)
@@ -169,23 +169,24 @@ def get_default_mode_and_env(train_folder, dataset_path, checkpoint, env=None, l
     # datasets_cfg = hydra.initialize("datamodule/datasets/vision_lang.yaml")
     # since we don't use the trainer during inference, manually set up data_module
     # cfg.datamodule.datasets = datasets_cfg
-    cfg.datamodule.root_data_dir = dataset_path
-    data_module = hydra.utils.instantiate(cfg.datamodule, num_workers=0)
-    data_module.prepare_data()
-    data_module.setup()
-    dataloader = data_module.val_dataloader()
-    dataset = dataloader["lang"].dataset
     if device_id != 'cpu':
         device = torch.device(f"cuda:{device_id}")
     else:
         device = 'cpu'
+    cfg.datamodule.root_data_dir = dataset_path
+    data_module = hydra.utils.instantiate(cfg.datamodule, num_workers=0)
+    if prep_dm_and_deps:
+        data_module.prepare_data()
+        data_module.setup()
+        dataloader = data_module.val_dataloader()
+        dataset = dataloader["lang"].dataset
 
-    if lang_embeddings is None:
-        lang_embeddings = LangEmbeddings(dataset.abs_datasets_dir, lang_folder, device=device)
+        if lang_embeddings is None:
+            lang_embeddings = LangEmbeddings(dataset.abs_datasets_dir, lang_folder, device=device)
 
-    if env is None:
-        rollout_cfg = OmegaConf.load(Path(__file__).parents[2] / "conf/callbacks/rollout_lh/calvin.yaml")
-        env = hydra.utils.instantiate(rollout_cfg.env_cfg, dataset, device, show_gui=False)
+        if env is None:
+            rollout_cfg = OmegaConf.load(Path(__file__).parents[2] / "conf/callbacks/rollout_lh/calvin.yaml")
+            env = hydra.utils.instantiate(rollout_cfg.env_cfg, dataset, device, show_gui=False)
 
 
     # new stuff
