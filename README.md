@@ -180,8 +180,12 @@ License: [https://github.com/intuitive-robots/mdt_policy/blob/main/LICENSE](http
 If you found the code usefull, please cite our work:
 
 ```bibtex
-@inproceedings{
-    reuss2024multimodal,
-    ???
+@misc{reuss2024efficient,
+    title={Efficient Diffusion Transformer Policies with Mixture of Expert Denoisers for Multitask Learning},
+    author={Moritz Reuss and Jyothish Pari and Pulkit Agrawal and Rudolf Lioutikov},
+    year={2024},
+    eprint={2412.12953},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG}
 }
 ```
