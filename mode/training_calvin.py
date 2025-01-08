@@ -60,7 +60,7 @@ def setup_logger(cfg: DictConfig, model: LightningModule):
 def train(cfg: DictConfig) -> None:
     try:
         # Setup environment
-        os.environ['HYDRA_FULL_ERROR'] = '1'
+        # os.environ['HYDRA_FULL_ERROR'] = '1'
         # Set memory allocation configuration
         os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
         
