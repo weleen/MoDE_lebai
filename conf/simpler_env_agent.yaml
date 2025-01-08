@@ -1,0 +1,13 @@
+eval_cfg_overwrite:
+  datamodule:
+    datasets:
+      lang_dataset:
+        lang_folder: lang_annotations
+  model:
+    num_sampling_steps: 10
+
+checkpoint: unknown=0
+device: 0
+
+host: "localhost"
+port: 22780
