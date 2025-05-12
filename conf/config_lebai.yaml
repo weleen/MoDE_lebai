@@ -22,8 +22,8 @@ proprio_dims: 7
 obs_dim: 512
 goal_dim: 512
 obs_seq_len: 1
-act_seq_len: 16
-multistep: 16 #${act_seq_len}
+act_seq_len: 32
+multistep: 32 #${act_seq_len}
 p_last_state: 0
 gen_img_res: 112
 max_epochs: 100
