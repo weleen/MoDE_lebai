@@ -400,6 +400,7 @@ class MoDEAgent(pl.LightningModule):
         action_loss = torch.tensor(0.0, device=self.device)
         total_bs = 0
         batch_sizes = []
+
         for self.modality_scope, dataset_batch in batch.items():
             # Compute the required embeddings
             perceptual_emb, latent_goal = self.compute_input_embeddings(dataset_batch)
