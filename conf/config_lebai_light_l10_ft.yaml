@@ -1,12 +1,12 @@
 defaults:
   - callbacks: lebai
   - datamodule: lebai
-  - model: mode_agent
+  - model: mode_light_agent_l10_ft
   - override hydra/job_logging: colorlog
   - override hydra/hydra_logging: colorlog
 
 
-root_data_dir: data/lebai`
+root_data_dir: data/lebai
 lang_folder: lang_clip_resnet50
 vis_clip_model_name: ViT-B/16
 clip_lang_model_name: ViT-B/32
@@ -16,7 +16,7 @@ slurm: false
 seed: 421
 device: 'cuda'
 batch_size: 64 # 38 # 128
-devices: 1
+devices: 4
 act_dim: 7
 proprio_dims: 7
 obs_dim: 512
@@ -26,7 +26,7 @@ act_seq_len: 32
 multistep: 32 #${act_seq_len}
 p_last_state: 0
 gen_img_res: 112
-max_epochs: 100
+max_epochs: 200
 rollout_lh_skip_epochs: 9
 num_workers: 12
 benchmark_name: lebai_mode

@@ -27,3 +27,4 @@ einops_exts
 flash_attn
 git+https://github.com/openai/CLIP.git
 timm
+fastapi

@@ -282,7 +282,7 @@ class LebaiDataModule(pl.LightningDataModule):
             repeat=1 * repeat_factor,
         )
 
-        ds = ConcatDataset([ds1, ds2, ds3, ds4])
+        ds = ConcatDataset([ds4]) # ([ds1, ds2, ds3, ds4])
 
         self.train_datasets = {"lang": ds}
 

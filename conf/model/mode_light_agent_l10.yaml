@@ -1,4 +1,4 @@
-_target_: mode.models.mode_agent.MoDEAgent
+_target_: mode.models.mode_agent.MoDELightAgent
 _recursive_: false
 multistep: ${multistep}
 use_lr_scheduler: True
@@ -54,7 +54,7 @@ model:
     use_proprio: ${model.use_proprio}
     state_dim: ${proprio_dims}
     embed_dim: ${model.latent_dim}
-    n_layers: 12
+    n_layers: 10
     goal_seq_len: 1
     obs_seq_len: ${obs_seq_len}
     action_seq_len: ${act_seq_len}
