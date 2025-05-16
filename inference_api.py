@@ -51,7 +51,7 @@ def load_mode_from_safetensor(
 @lru_cache
 def get_agent(device: str) -> MoDEAgent:
     model = load_mode_from_safetensor(
-        Path("./MoDE_Pretrained/"), # "./logs/runs/2025-05-14/16-26-17_seed421/seed_421/saved_models/"),
+        Path("./logs/runs/lebai/l10_4tasks/"), # ./logs/runs/lebai/l10_ds1_only/
     )
     model.eval()
     model.freeze()
